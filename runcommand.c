@@ -10,7 +10,15 @@
 #include <sys/types.h>
 #include <stdnoreturn.h>
 
-noreturn void child_proc(char *cmd, const char *const *args, uint32_t arg_count, int stdout_pipe, int stderr_pipe) {
+#include <runcommand.h>
+
+struct captured_txt {
+    uint64_t cap;
+    uint64_t len;
+    char *str;
+};
+
+noreturn static void child_proc(char *cmd, char **args, uint32_t arg_count, int stdout_pipe, int stderr_pipe) {
     // We allocate two extra slots, one for the program name (argv[0]), and
     // one for the trailing NULL
     char *execvp_args[arg_count+2];
@@ -37,17 +45,11 @@ noreturn void child_proc(char *cmd, const char *const *args, uint32_t arg_count,
 
 #define PIPE_READ_AMOUNT 128
 
-extern inline uint64_t grow_cap(uint64_t cap) {
+inline uint64_t grow_cap(uint64_t cap) {
     return (cap * 3) / 2 + PIPE_READ_AMOUNT + 1;
 }
 
-struct captured_txt {
-    uint64_t cap;
-    uint64_t len;
-    char *str;
-};
-
-void guarantee_captured_cap(struct captured_txt *captured) {
+static void guarantee_captured_cap(struct captured_txt *captured) {
     if (captured->len + PIPE_READ_AMOUNT >= captured->cap) {
         uint64_t new_cap = grow_cap(captured->cap);
         captured->cap = new_cap;
@@ -56,7 +58,7 @@ void guarantee_captured_cap(struct captured_txt *captured) {
 }
 
 // returns: should the fd be kept
-bool handle_fd(struct pollfd *fd, struct captured_txt *captured) {
+static bool handle_fd(struct pollfd *fd, struct captured_txt *captured) {
     short events = fd->revents;
 
     if (events & POLLERR) {
@@ -88,12 +90,7 @@ bool handle_fd(struct pollfd *fd, struct captured_txt *captured) {
     }
 }
 
-struct ProcessResult {
-    char *output;
-    unsigned char status;
-};
-
-void parent_proc(pid_t child_pid, int stdout_pipe, int stderr_pipe, struct ProcessResult *result) {
+static void parent_proc(pid_t child_pid, int stdout_pipe, int stderr_pipe, struct CRCProcessResult *result) {
     struct captured_txt captured;
     memset(&captured, 0, sizeof(captured));
 
@@ -135,7 +132,7 @@ void parent_proc(pid_t child_pid, int stdout_pipe, int stderr_pipe, struct Proce
     result->status = (unsigned char)child_status;
 }
 
-struct ProcessResult run_command(char *cmd, const char *const *args, uint32_t arg_count) {
+struct CRCProcessResult CRC_run_command(char *cmd, char **args, uint32_t arg_count) {
     bool failed = false;
     int stdout_pipe[2];
     failed |= pipe(stdout_pipe);
@@ -160,8 +157,46 @@ struct ProcessResult run_command(char *cmd, const char *const *args, uint32_t ar
         close(stdout_pipe[1]);
         close(stderr_pipe[1]);
 
-        struct ProcessResult result;
+        struct CRCProcessResult result;
         parent_proc(pid, stdout_pipe[0], stderr_pipe[0], &result);
         return result;
     }
+}
+
+static *null_terminate_epsl_string(struct ARRAY_char *str) {
+    if (str->capacity <= str->length) {
+        uint64_t new_cap = str->capacity + 1;
+        str->content = realloc(str->content, new_cap);
+        str->capacity = new_cap;
+    }
+    
+    str->content[str->length] = '\0';
+}
+
+struct ProcessResult *CRC_epsl_run_command(struct ARRAY_char *cmd, struct ARRAY_ARRAY_char *args) {
+    null_terminate_epsl_string(cmd);
+    
+    char *args_buffer[args->length];
+    for (uint64_t i = 0; i < args->length; i++) {
+        char *arg = args->content + i;
+        null_terminate_epsl_string(arg);
+        args[i] = arg;
+    }
+    
+    struct CRCProcessResult result = CRC_run_command(cmd->content, args_buffer, arg->length);
+
+    uint64_t output_len = strlen(result.output);
+
+    struct ARRAY_char *epsl_output = malloc(sizeof(*output_str));
+    epsl_output->ref_counter = 1;
+    epsl_output->capacity = output_len + 1;
+    epsl_output->length = output_len;
+    epsl_output->content = result.output;
+    
+    struct ProcessResult *epsl_result = malloc(sizeof(*epsl_result));
+    epsl_result->ref_counter = 0;
+    epsl_result->output = epsl_output;
+    epsl_result->status = result.status;
+
+    return epsl_result;
 }
