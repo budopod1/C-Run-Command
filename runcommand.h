@@ -21,7 +21,7 @@ struct ARRAY_ARRAY_char {
     uint64_t ref_counter;
     uint64_t capacity;
     uint64_t length;
-    struct EPSLString *content;
+    struct ARRAY_char *content;
 }
 
 struct ProcessResult {
