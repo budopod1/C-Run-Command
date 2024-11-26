@@ -65,21 +65,24 @@ static void handle_stream(struct pollfd *fd, struct CapturedText *txt) {
         exit(1);
     }
 
-    if (events & POLLIN) {
+    if (!(events & POLLIN)) return;
+
+    while (true) {
         guarantee_text_cap(txt);
 
         int64_t bytes_read = (uint64_t)read(
             fd->fd, txt->str+txt->len, PIPE_READ_AMOUNT);
         if (bytes_read == 0) {
-            return;
-        } else if (bytes_read == -1) {
+            break;
+        } else if (bytes_read < 0) {
             fprintf(stderr, "Failed to read stdout/stderr from subprocess pipe\n");
             exit(1);
         }
 
         txt->len += bytes_read;
-        txt->str[txt->len] = '\0';
     }
+
+    txt->str[txt->len] = '\0';
 }
 
 static bool should_close_fd(struct pollfd *fd) {
@@ -108,13 +111,13 @@ static void parent_proc(pid_t child_pid, struct CRCCaptureSettings settings, int
     struct CapturedText *txts[2];
     nfds_t fd_count = 0;
     
-    if (settings.capture_stdout) {
+    if (settings.keep_stdout) {
         fds[fd_count] = (struct pollfd) {stdout_pipe, notable_events, 0};
         txts[fd_count] = &out;
         fd_count++;
     }
     
-    if (settings.capture_stderr) {
+    if (settings.keep_stderr) {
         fds[fd_count] = (struct pollfd) {stderr_pipe, notable_events, 0};
         txts[fd_count] = settings.merge_stderr ? &out : &err;
         fd_count++;
@@ -214,8 +217,8 @@ struct ProcessResult *CRC_epsl_run_command(struct ARRAY_char *cmd, struct ARRAY_
     }
 
     struct CRCCaptureSettings settings;
-    settings.capture_stdout = capture_mode & 1;
-    settings.capture_stderr = capture_mode & 2;
+    settings.keep_stdout = capture_mode & 1;
+    settings.keep_stderr = capture_mode & 2;
     settings.merge_stderr = capture_mode & 4;
     
     struct CRCProcessResult result = CRC_run_command(

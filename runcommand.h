@@ -11,8 +11,8 @@ struct CRCProcessResult {
 };
 
 struct CRCCaptureSettings {
-    unsigned int capture_stdout : 1;
-    unsigned int capture_stderr : 1;
+    unsigned int keep_stdout : 1;
+    unsigned int keep_stderr : 1;
     unsigned int merge_stderr: 1;
 };
 union ___EPSL_PUBLIC_START;
@@ -42,7 +42,7 @@ union ___EPSL_PUBLIC_STOP;
 struct CRCProcessResult CRC_run_command(char *cmd, char **args, uint32_t arg_count, struct CRCCaptureSettings settings);
 union ___EPSL_PUBLIC_START;
 
-// TODO: if the function matches ^[A-Z]+_epsl_([A-Za-z0-9_]+)$, the exposed funciton name in Epsilon
+// TODO: if the function matches ^[A-Z]+_epsl_([A-Za-z0-9_]+)$, the exposed function name in Epsilon
 // should be the capture group
 struct ProcessResult *CRC_epsl_run_command(struct ARRAY_char *cmd, struct ARRAY_ARRAY_char *args, uint32_t capture_mode);
 
