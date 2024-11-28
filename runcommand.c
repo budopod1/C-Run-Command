@@ -10,7 +10,10 @@
 #include <sys/types.h>
 #include <stdnoreturn.h>
 
+#define REQUIRE_FULL_RUNCOMMAND_INTERFACE
 #include "runcommand.h"
+
+typedef struct ProcessResult EPSLProcessResult;
 
 struct CapturedText {
     uint64_t cap;
@@ -206,7 +209,7 @@ static struct ARRAY_char *wrap_c_str_to_epsl_str(uint64_t ref_counter, char *c_s
     return epsl_str;
 }
 
-struct ProcessResult *CRC_epsl_run_command(struct ARRAY_char *cmd, struct ARRAY_ARRAY_char *args, uint32_t capture_mode) {
+EPSLProcessResult *CRC_epsl_run_command(struct ARRAY_char *cmd, struct ARRAY_ARRAY_char *args, uint32_t capture_mode) {
     null_terminate_epsl_string(cmd);
     
     char *args_buffer[args->length];
@@ -224,7 +227,7 @@ struct ProcessResult *CRC_epsl_run_command(struct ARRAY_char *cmd, struct ARRAY_
     struct CRCProcessResult result = CRC_run_command(
         cmd->content, args_buffer, args->length, settings);
     
-    struct ProcessResult *epsl_result = malloc(sizeof(*epsl_result));
+    EPSLProcessResult *epsl_result = malloc(sizeof(*epsl_result));
     epsl_result->ref_counter = 0;
     epsl_result->out = wrap_c_str_to_epsl_str(1, result.out);
     epsl_result->err = wrap_c_str_to_epsl_str(1, result.err);

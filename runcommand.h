@@ -3,25 +3,16 @@
 
 #include <stdint.h>
 
-union ___EPSL_PUBLIC_STOP;
-struct CRCProcessResult {
-    char *out;
-    char *err;
-    unsigned char status;
-};
+#if defined(EPSL_PROJECT) || defined(REQUIRE_FULL_RUNCOMMAND_INTERFACE)
 
-struct CRCCaptureSettings {
-    unsigned int keep_stdout : 1;
-    unsigned int keep_stderr : 1;
-    unsigned int merge_stderr: 1;
-};
-union ___EPSL_PUBLIC_START;
+#define EPSL_COMMON_PREFIX "CRC_epsl_"
+#define EPSL_IMPLEMENTATION_LOCATION "runcommand.c"
 
 struct ARRAY_char {
     uint64_t ref_counter;
     uint64_t capacity;
     uint64_t length;
-    char *content;
+    unsigned char *content;
 };
 
 struct ARRAY_ARRAY_char {
@@ -38,12 +29,26 @@ struct ProcessResult {
     uint8_t status;
 };
 
-union ___EPSL_PUBLIC_STOP;
-struct CRCProcessResult CRC_run_command(char *cmd, char **args, uint32_t arg_count, struct CRCCaptureSettings settings);
-union ___EPSL_PUBLIC_START;
-
-// TODO: if the function matches ^[A-Z]+_epsl_([A-Za-z0-9_]+)$, the exposed function name in Epsilon
-// should be the capture group
 struct ProcessResult *CRC_epsl_run_command(struct ARRAY_char *cmd, struct ARRAY_ARRAY_char *args, uint32_t capture_mode);
+
+#endif
+
+#if !defined(EPSL_PROJECT) || defined(REQUIRE_FULL_RUNCOMMAND_INTERFACE)
+
+struct CRCProcessResult {
+    char *out;
+    char *err;
+    unsigned char status;
+};
+
+struct CRCCaptureSettings {
+    unsigned int keep_stdout : 1;
+    unsigned int keep_stderr : 1;
+    unsigned int merge_stderr: 1;
+};
+
+struct CRCProcessResult CRC_run_command(char *cmd, char **args, uint32_t arg_count, struct CRCCaptureSettings settings);
+
+#endif
 
 #endif
