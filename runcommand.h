@@ -41,13 +41,7 @@ struct CRCProcessResult {
     unsigned char status;
 };
 
-struct CRCCaptureSettings {
-    unsigned int keep_stdout : 1;
-    unsigned int keep_stderr : 1;
-    unsigned int merge_stderr: 1;
-};
-
-struct CRCProcessResult CRC_run_command(char *cmd, char **args, uint32_t arg_count, struct CRCCaptureSettings settings);
+struct CRCProcessResult CRC_run_command(char *cmd, char **args, uint32_t arg_count, uint32_t capture_mode);
 
 #endif
 

@@ -21,6 +21,12 @@ struct CapturedText {
     char *str;
 };
 
+struct CaptureSettings {
+    unsigned int keep_stdout : 1;
+    unsigned int keep_stderr : 1;
+    unsigned int merge_stderr: 1;
+};
+
 noreturn static void child_proc(char *cmd, char **args, uint32_t arg_count, int stdout_pipe, int stderr_pipe) {
     // We allocate two extra slots, one for the program name (argv[0]), and
     // one for the trailing NULL
@@ -105,7 +111,7 @@ char *captured_text_to_str(struct CapturedText *txt) {
     }
 }
 
-static void parent_proc(pid_t child_pid, struct CRCCaptureSettings settings, int stdout_pipe, int stderr_pipe, struct CRCProcessResult *result) {
+static void parent_proc(pid_t child_pid, struct CaptureSettings settings, int stdout_pipe, int stderr_pipe, struct CRCProcessResult *result) {
     struct CapturedText out = {0, 0, NULL};
     struct CapturedText err = {0, 0, NULL};
     
@@ -154,7 +160,7 @@ static void parent_proc(pid_t child_pid, struct CRCCaptureSettings settings, int
     result->status = (unsigned char)child_status;
 }
 
-struct CRCProcessResult CRC_run_command(char *cmd, char **args, uint32_t arg_count, struct CRCCaptureSettings settings) {
+struct CRCProcessResult CRC_run_command(char *cmd, char **args, uint32_t arg_count, uint32_t capture_mode) {
     bool failed = false;
     int stdout_pipe[2];
     failed |= pipe(stdout_pipe);
@@ -180,6 +186,10 @@ struct CRCProcessResult CRC_run_command(char *cmd, char **args, uint32_t arg_cou
         // this is the parent process
         close(stdout_pipe[1]);
         close(stderr_pipe[1]);
+
+        struct CaptureSettings settings = {
+            capture_mode & 1, (capture_mode & 2) != 0, (capture_mode & 4) != 0
+        };
 
         struct CRCProcessResult result;
         parent_proc(pid, settings, stdout_pipe[0], stderr_pipe[0], &result);
@@ -218,14 +228,9 @@ EPSLProcessResult *CRC_epsl_run_command(struct ARRAY_char *cmd, struct ARRAY_ARR
         null_terminate_epsl_string(arg);
         args_buffer[i] = (char*)arg->content;
     }
-
-    struct CRCCaptureSettings settings;
-    settings.keep_stdout = capture_mode & 1;
-    settings.keep_stderr = capture_mode & 2;
-    settings.merge_stderr = capture_mode & 4;
     
     struct CRCProcessResult result = CRC_run_command(
-        (char*)cmd->content, args_buffer, args->length, settings);
+        (char*)cmd->content, args_buffer, args->length, capture_mode);
     
     EPSLProcessResult *epsl_result = malloc(sizeof(*epsl_result));
     epsl_result->ref_counter = 0;
