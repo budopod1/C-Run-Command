@@ -114,18 +114,18 @@ char *captured_text_to_str(struct CapturedText *txt) {
 static void parent_proc(pid_t child_pid, struct CaptureSettings settings, int stdout_pipe, int stderr_pipe, struct CRCProcessResult *result) {
     struct CapturedText out = {0, 0, NULL};
     struct CapturedText err = {0, 0, NULL};
-    
+
     short notable_events = POLLIN;
     struct pollfd fds[2];
     struct CapturedText *txts[2];
     nfds_t fd_count = 0;
-    
+
     if (settings.keep_stdout) {
         fds[fd_count] = (struct pollfd) {stdout_pipe, notable_events, 0};
         txts[fd_count] = &out;
         fd_count++;
     }
-    
+
     if (settings.keep_stderr) {
         fds[fd_count] = (struct pollfd) {stderr_pipe, notable_events, 0};
         txts[fd_count] = settings.merge_stderr ? &out : &err;
@@ -203,7 +203,7 @@ static void null_terminate_epsl_string(struct ARRAY_char *str) {
         str->content = realloc(str->content, new_cap);
         str->capacity = new_cap;
     }
-    
+
     str->content[str->length] = '\0';
 }
 
@@ -221,17 +221,17 @@ static struct ARRAY_char *wrap_c_str_to_epsl_str(uint64_t ref_counter, char *c_s
 
 EPSLProcessResult *CRC_epsl_run_command(struct ARRAY_char *cmd, struct ARRAY_ARRAY_char *args, uint32_t capture_mode) {
     null_terminate_epsl_string(cmd);
-    
+
     char *args_buffer[args->length];
     for (uint64_t i = 0; i < args->length; i++) {
         struct ARRAY_char *arg = args->content[i];
         null_terminate_epsl_string(arg);
         args_buffer[i] = (char*)arg->content;
     }
-    
+
     struct CRCProcessResult result = CRC_run_command(
         (char*)cmd->content, args_buffer, args->length, capture_mode);
-    
+
     EPSLProcessResult *epsl_result = malloc(sizeof(*epsl_result));
     epsl_result->ref_counter = 0;
     epsl_result->out = wrap_c_str_to_epsl_str(1, result.out);
