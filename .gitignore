@@ -1,3 +1,4 @@
 *
 !.gitignore
-!runcommand.*
+!runcommand.c
+!runcommand.h

@@ -204,7 +204,7 @@ static struct ARRAY_char *wrap_c_str_to_epsl_str(uint64_t ref_counter, char *c_s
     epsl_str->ref_counter = ref_counter;
     epsl_str->capacity = str_len + 1;
     epsl_str->length = str_len;
-    epsl_str->content = c_str;
+    epsl_str->content = (unsigned char*)c_str;
 
     return epsl_str;
 }
@@ -216,7 +216,7 @@ EPSLProcessResult *CRC_epsl_run_command(struct ARRAY_char *cmd, struct ARRAY_ARR
     for (uint64_t i = 0; i < args->length; i++) {
         struct ARRAY_char *arg = args->content[i];
         null_terminate_epsl_string(arg);
-        args_buffer[i] = arg->content;
+        args_buffer[i] = (char*)arg->content;
     }
 
     struct CRCCaptureSettings settings;
@@ -225,7 +225,7 @@ EPSLProcessResult *CRC_epsl_run_command(struct ARRAY_char *cmd, struct ARRAY_ARR
     settings.merge_stderr = capture_mode & 4;
     
     struct CRCProcessResult result = CRC_run_command(
-        cmd->content, args_buffer, args->length, settings);
+        (char*)cmd->content, args_buffer, args->length, settings);
     
     EPSLProcessResult *epsl_result = malloc(sizeof(*epsl_result));
     epsl_result->ref_counter = 0;
