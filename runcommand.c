@@ -97,7 +97,7 @@ static void handle_stream(struct pollfd *fd, struct CapturedText *txt) {
 static bool should_close_fd(struct pollfd *fd) {
     if (fd->revents & POLLHUP) {
         return true;
-    }  else {
+    } else {
         fd->revents = 0;
         return false;
     }
