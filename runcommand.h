@@ -3,6 +3,16 @@
 
 #include <stdint.h>
 
+#ifdef _WIN32
+#define DLL_EXPORT __declspec(dllexport)
+#else
+#define DLL_EXPORT
+#endif
+
+#define CAPTURE_MODE_KEEP_STDOUT 1
+#define CAPTURE_MODE_KEEP_STDERR 2
+#define CAPTURE_MODE_MERGE_STDERR 4
+
 #if defined(EPSL_PROJECT) || defined(REQUIRE_FULL_RUNCOMMAND_INTERFACE)
 
 #define EPSL_COMMON_PREFIX "CRC_epsl_"
@@ -29,6 +39,7 @@ struct ProcessResult {
     uint8_t status;
 };
 
+DLL_EXPORT
 struct ProcessResult *CRC_epsl_run_command(struct ARRAY_char *cmd, struct ARRAY_ARRAY_char *args, uint32_t capture_mode);
 
 #endif
@@ -41,6 +52,7 @@ struct CRCProcessResult {
     unsigned char status;
 };
 
+DLL_EXPORT
 struct CRCProcessResult CRC_run_command(char *cmd, char **args, uint32_t arg_count, uint32_t capture_mode);
 
 #endif
