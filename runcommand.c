@@ -99,7 +99,7 @@ static void make_pipe_pair(PHANDLE par_handle, PHANDLE sub_handle) {
     security_attributes.nLength = sizeof(security_attributes);
     security_attributes.lpSecurityDescriptor = NULL;
     security_attributes.bInheritHandle = true;
-    
+
     if (!CreatePipe(par_handle, sub_handle, &security_attributes, 0)) {
         fprintf(stderr, "Failed to open pipe\n");
         exit(1);
@@ -139,22 +139,6 @@ static void capture_pipe_out(HANDLE pipe, struct CapturedText *txt) {
     txt->str[txt->len] = '\0';
 }
 
-// static HANDLE make_passthrough_handle(DWORD nStdHandle) {
-//     HANDLE result;
-//     HANDLE srcHandle = GetStdHandle(nStdHandle);
-//     BOOL status = DuplicateHandle(
-//         GetCurrentProcess(), // src process
-//         srcHandle, // src handle
-//         GetCurrentProcess(), // dest handle
-//         &result, // dest handle
-//         DUPLICATE_SAME_ACCESS, // access 
-//         TRUE, // inherit
-//         0 // options
-//     );
-//     if (!status) return NULL;
-//     return result;
-// }
-
 DLL_EXPORT
 struct CRCProcessResult CRC_run_command(char *cmd, char **args, uint32_t arg_count, uint32_t capture_mode) {
     verify_capture_mode(capture_mode);
@@ -173,11 +157,11 @@ struct CRCProcessResult CRC_run_command(char *cmd, char **args, uint32_t arg_cou
 
     char cmd_str[cmd_str_len+1];
     char *cmd_str_p = cmd_str;
-    
+
     if (should_escape_cmd) {
         memcpy(cmd_str_p, escaped_cmd_prefix, escaped_cmd_prefix_len);
         cmd_str_p += escaped_cmd_prefix_len;
-        escape_cmd_arg(cmd, cmd_str_p, &cmd_str_p);   
+        escape_cmd_arg(cmd, cmd_str_p, &cmd_str_p);
     } else {
         memcpy(cmd_str_p, cmd, unescaped_cmd_len);
         cmd_str_p += unescaped_cmd_len;
@@ -189,7 +173,7 @@ struct CRCProcessResult CRC_run_command(char *cmd, char **args, uint32_t arg_cou
     }
 
     int wide_cmd_str_size = MultiByteToWideChar(
-        CP_UTF8, // source encoding 
+        CP_UTF8, // source encoding
         0, // flags
         cmd_str, // src str
         -1, // src len (-1 for NULL terminated)
@@ -205,7 +189,7 @@ struct CRCProcessResult CRC_run_command(char *cmd, char **args, uint32_t arg_cou
     wchar_t wide_cmd_str[wide_cmd_str_size];
 
     int status = MultiByteToWideChar(
-        CP_UTF8, // source encoding 
+        CP_UTF8, // source encoding
         0, // flags
         cmd_str, // src str
         -1, // src len (-1 for NULL terminated)
@@ -227,10 +211,10 @@ struct CRCProcessResult CRC_run_command(char *cmd, char **args, uint32_t arg_cou
     }
 
     HANDLE par_stdout = NULL;
-    HANDLE sub_stdout = NULL; // make_passthrough_handle(STD_OUTPUT_HANDLE);
+    HANDLE sub_stdout = NULL;
 
     HANDLE par_stderr = NULL;
-    HANDLE sub_stderr = NULL; // make_passthrough_handle(STD_ERROR_HANDLE);
+    HANDLE sub_stderr = NULL;
 
     if (capture_mode & CAPTURE_MODE_KEEP_STDOUT) {
         make_pipe_pair(&par_stdout, &sub_stdout);
@@ -261,7 +245,7 @@ struct CRCProcessResult CRC_run_command(char *cmd, char **args, uint32_t arg_cou
         NULL, // thread attributes
         TRUE, // inherit handles
         0, // creation flags
-        NULL, // environment 
+        NULL, // environment
         NULL, // current directory
         &start_info,
         &process_info
