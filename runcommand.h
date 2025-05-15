@@ -3,6 +3,10 @@
 
 #include <stdint.h>
 
+#if __STDC_VERSION__ < 201112L
+#error "C11 or greater is required"
+#endif
+
 #ifdef _WIN32
 #define DLL_EXPORT __declspec(dllexport)
 #else

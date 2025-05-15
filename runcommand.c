@@ -286,13 +286,16 @@ struct CRCProcessResult CRC_run_command(char *cmd, char **args, uint32_t arg_cou
     return result;
 }
 
-#else
+#else // _MSC_VER
 
 #include <poll.h>
 #include <unistd.h>
 #include <sys/wait.h>
 #include <sys/types.h>
-#include <stdnoreturn.h>
+
+#if __STDC_VERSION__ < 202311L
+#define noreturn _Noreturn
+#endif
 
 noreturn static void child_proc(char *cmd, char **args, uint32_t arg_count, int stdout_pipe, int stderr_pipe) {
     // We allocate two extra slots, one for the program name (argv[0]), and
