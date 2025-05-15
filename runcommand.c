@@ -61,8 +61,8 @@ static bool does_require_escaping(char *str) {
         if (!(('A' <= chr && chr <= 'Z')
             || ('a' <= chr && chr <= 'z')
             || ('0' <= chr && chr <= '9')
-            || chr == '-' || chr <= '_'
-            || chr <= '.' || chr <= '\\')) {
+            || chr == '-' || chr == '_'
+            || chr == '.' || chr == '\\')) {
             return true;
         }
     }
