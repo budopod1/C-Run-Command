@@ -144,12 +144,9 @@ struct CRCProcessResult CRC_run_command(char *cmd, char **args, uint32_t arg_cou
     verify_capture_mode(capture_mode);
 
     bool should_escape_cmd = does_require_escaping(cmd);
-    static const char *const escaped_cmd_prefix = "& ";
-    uint32_t escaped_cmd_prefix_len = strlen(escaped_cmd_prefix);
 
     uint32_t unescaped_cmd_len = strlen(cmd);
-    uint32_t cmd_str_len = should_escape_cmd ?
-        escaped_cmd_prefix_len + escaped_cmd_arg_len(cmd) : unescaped_cmd_len;
+    uint32_t cmd_str_len = should_escape_cmd ? escaped_cmd_arg_len(cmd) : unescaped_cmd_len;
     cmd_str_len += arg_count; // the spaces
     for (uint32_t i = 0; i < arg_count; i++) {
         cmd_str_len += escaped_cmd_arg_len(args[i]);
@@ -159,8 +156,6 @@ struct CRCProcessResult CRC_run_command(char *cmd, char **args, uint32_t arg_cou
     char *cmd_str_p = cmd_str;
 
     if (should_escape_cmd) {
-        memcpy(cmd_str_p, escaped_cmd_prefix, escaped_cmd_prefix_len);
-        cmd_str_p += escaped_cmd_prefix_len;
         escape_cmd_arg(cmd, cmd_str_p, &cmd_str_p);
     } else {
         memcpy(cmd_str_p, cmd, unescaped_cmd_len);
