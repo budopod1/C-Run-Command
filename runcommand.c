@@ -443,24 +443,26 @@ struct CRCProcessResult CRC_run_command(char *cmd, char **args, uint32_t arg_cou
 
 typedef struct ProcessResult EPSLProcessResult;
 
-static void null_terminate_epsl_string(struct ARRAY_char *str) {
-    if (str->capacity <= str->length) {
-        uint64_t new_cap = str->capacity + 1;
-        str->content = realloc(str->content, new_cap);
-        str->capacity = new_cap;
+static void *safe_malloc(size_t amount) {
+    void *result = malloc(amount);
+    if (!result) {
+        fprintf(stderr, "Out of memory\n");
+        exit(1);
     }
+    return result;
+}
 
-    str->content[str->length] = '\0';
+static char *c_str_from_epsl_str(struct ARRAY_char *str) {
+    char *result = safe_malloc(str->length + 1);
+    memcpy(result, str->content, str->length);
+    result[str->length] = '\0';
+    return result;
 }
 
 static struct ARRAY_char *wrap_c_str_to_epsl_str(uint64_t ref_counter, char *c_str) {
     uint64_t str_len = strlen(c_str);
 
-    struct ARRAY_char *epsl_str = malloc(sizeof(*epsl_str));
-    if (epsl_str == NULL) {
-        fprintf(stderr, "Out of memory\n");
-        exit(1);
-    }
+    struct ARRAY_char *epsl_str = safe_malloc(sizeof(*epsl_str));
     epsl_str->ref_counter = ref_counter;
     epsl_str->capacity = str_len + 1;
     epsl_str->length = str_len;
@@ -471,23 +473,22 @@ static struct ARRAY_char *wrap_c_str_to_epsl_str(uint64_t ref_counter, char *c_s
 
 DLL_EXPORT
 EPSLProcessResult *CRC_epsl_run_command(struct ARRAY_char *cmd, struct ARRAY_ARRAY_char *args, uint32_t capture_mode) {
-    null_terminate_epsl_string(cmd);
+    char *cmd_c_str = c_str_from_epsl_str(cmd);
 
     char *args_buffer[args->length];
     for (uint64_t i = 0; i < args->length; i++) {
-        struct ARRAY_char *arg = args->content[i];
-        null_terminate_epsl_string(arg);
-        args_buffer[i] = (char*)arg->content;
+        args_buffer[i] = c_str_from_epsl_str(args->content[i]);
     }
 
     struct CRCProcessResult result = CRC_run_command(
-        (char*)cmd->content, args_buffer, args->length, capture_mode);
-
-    EPSLProcessResult *epsl_result = malloc(sizeof(*epsl_result));
-    if (epsl_result == NULL) {
-        fprintf(stderr, "Out of memory\n");
-        exit(1);
+        cmd_c_str, args_buffer, args->length, capture_mode);
+    
+    free(cmd_c_str);
+    for (uint64_t i = 0; i < args->length; i++) {
+        free(args_buffer[i]);
     }
+
+    EPSLProcessResult *epsl_result = safe_malloc(sizeof(*epsl_result));
     epsl_result->ref_counter = 0;
     epsl_result->out = wrap_c_str_to_epsl_str(1, result.out);
     epsl_result->err = wrap_c_str_to_epsl_str(1, result.err);
