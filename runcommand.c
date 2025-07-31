@@ -169,7 +169,7 @@ struct CRCProcessResult CRC_run_command(char *cmd, char **args, uint32_t arg_cou
 
     int wide_cmd_str_size = MultiByteToWideChar(
         CP_UTF8, // source encoding
-        0, // flags
+        MB_ERR_INVALID_CHARS, // flags
         cmd_str, // src str
         -1, // src len (-1 for NULL terminated)
         NULL, // dest buffer (ignored due to next param)
@@ -185,7 +185,7 @@ struct CRCProcessResult CRC_run_command(char *cmd, char **args, uint32_t arg_cou
 
     int status = MultiByteToWideChar(
         CP_UTF8, // source encoding
-        0, // flags
+        MB_ERR_INVALID_CHARS, // flags
         cmd_str, // src str
         -1, // src len (-1 for NULL terminated)
         wide_cmd_str, // dest buffer
